@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Working Hospital System</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M3Z26FSYR6"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-M3Z26FSYR6');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="./config.js"></script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold mb-8">Working Hospital System</h1>
+        
+        <div class="bg-gray-800 p-6 rounded-lg mb-6">
+            <h2 class="text-2xl font-semibold mb-4">Add Patient</h2>
+            <button id="add-patient-btn" class="bg-green-500 hover:bg-green-600 px-6 py-3 rounded font-semibold">
+                Add New Patient
+            </button>
+        </div>
+        
+        <div id="status" class="bg-gray-800 p-6 rounded-lg">
+            <h2 class="text-2xl font-semibold mb-4">Status</h2>
+            <div id="status-content">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        console.log('Script loaded');
+        
+        // Simple patient addition
+        function addPatient() {
+            const name = prompt('Enter patient name:');
+            if (name) {
+                alert('Patient ' + name + ' added successfully!');
+                document.getElementById('status-content').innerHTML = 'Patient ' + name + ' added!';
+            }
+        }
+        
+        // Add event listener
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded');
+            document.getElementById('add-patient-btn').addEventListener('click', addPatient);
+            document.getElementById('status-content').innerHTML = 'System ready - click Add New Patient';
+        });
+    </script>
+</body>
+</html>

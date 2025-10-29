@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Test</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M3Z26FSYR6"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-M3Z26FSYR6');
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="./config.js"></script>
+</head>
+<body style="font-family: Arial; padding: 20px; background: #f0f0f0;">
+    <h1>Firebase Connection Test</h1>
+    <div id="status" style="padding: 10px; margin: 10px 0; border: 1px solid #ccc; background: white;">
+        Testing Firebase connection...
+    </div>
+    <button id="test-btn" style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer;">
+        Test Add Patient
+    </button>
+    <div id="result" style="margin-top: 20px; padding: 10px; background: white; border: 1px solid #ccc;"></div>
+
+    <script>
+        let db = null;
+        let firebaseInitialized = false;
+
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.innerHTML = message;
+            status.style.color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
+        }
+
+        function updateResult(message) {
+            document.getElementById('result').innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+        }
+
+        // Initialize Firebase
+        function initFirebase() {
+            try {
+                updateStatus('Checking Firebase SDK...');
+                
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase SDK not loaded');
+                }
+                updateStatus('Firebase SDK loaded ✓');
+
+                if (!window.FIREBASE_CONFIG) {
+                    throw new Error('Firebase config not found');
+                }
+                updateStatus('Firebase config found ✓');
+
+                firebase.initializeApp(window.FIREBASE_CONFIG);
+                db = firebase.firestore();
+                firebaseInitialized = true;
+                
+                updateStatus('Firebase initialized successfully ✓', 'success');
+                return true;
+            } catch (error) {
+                updateStatus('Firebase initialization failed: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        // Test adding a patient
+        async function testAddPatient() {
+            if (!firebaseInitialized) {
+                updateResult('ERROR: Firebase not initialized');
+                return;
+            }
+
+            try {
+                updateResult('Attempting to add test patient...');
+                
+                const testPatient = {
+                    name: 'Test Patient',
+                    age: 30,
+                    phone: '555-0123',
+                    medicalHistory: 'Test medical history',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                const docRef = await db.collection('patients').add(testPatient);
+                updateResult('SUCCESS: Patient added with ID: ' + docRef.id);
+                
+            } catch (error) {
+                updateResult('ERROR: ' + error.message);
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatus('Page loaded, initializing Firebase...');
+            
+            if (initFirebase()) {
+                document.getElementById('test-btn').addEventListener('click', testAddPatient);
+                updateResult('System ready - click Test Add Patient button');
+            } else {
+                updateResult('Firebase initialization failed - check console for errors');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Patients</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M3Z26FSYR6"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-M3Z26FSYR6');
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="./config.js"></script>
+</head>
+<body style="font-family: Arial; padding: 20px; background: #f0f0f0;">
+    <h1>Debug Patients</h1>
+    
+    <div id="status" style="padding: 10px; margin: 10px 0; border: 1px solid #ccc; background: white;">
+        Loading...
+    </div>
+    
+    <button id="check-firebase" style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; margin: 5px;">
+        Check Firebase Patients
+    </button>
+    
+    <button id="check-localstorage" style="padding: 10px 20px; background: #28a745; color: white; border: none; cursor: pointer; margin: 5px;">
+        Check LocalStorage Patients
+    </button>
+    
+    <button id="add-test-patient" style="padding: 10px 20px; background: #ffc107; color: black; border: none; cursor: pointer; margin: 5px;">
+        Add Test Patient
+    </button>
+    
+    <div id="results" style="margin-top: 20px; padding: 10px; background: white; border: 1px solid #ccc; min-height: 100px;">
+        Results will appear here...
+    </div>
+
+    <script>
+        let db = null;
+        let firebaseInitialized = false;
+
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.innerHTML = message;
+            status.style.color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
+        }
+
+        function addResult(message) {
+            const results = document.getElementById('results');
+            results.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+        }
+
+        function initializeFirebase() {
+            try {
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase SDK not loaded');
+                }
+
+                if (!window.FIREBASE_CONFIG) {
+                    throw new Error('Firebase config not found');
+                }
+
+                if (!firebase.apps || firebase.apps.length === 0) {
+                    firebase.initializeApp(window.FIREBASE_CONFIG);
+                }
+                
+                db = firebase.firestore();
+                firebaseInitialized = true;
+                updateStatus('Firebase initialized successfully', 'success');
+                return true;
+            } catch (error) {
+                updateStatus('Firebase initialization failed: ' + error.message, 'error');
+                firebaseInitialized = false;
+                return false;
+            }
+        }
+
+        async function checkFirebasePatients() {
+            addResult('Checking Firebase patients...');
+            try {
+                if (!firebaseInitialized || !db) {
+                    addResult('ERROR: Firebase not initialized');
+                    return;
+                }
+
+                const snapshot = await db.collection('patients').get();
+                addResult('Firebase patients found: ' + snapshot.size);
+                
+                if (snapshot.size === 0) {
+                    addResult('No patients in Firebase');
+                } else {
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        addResult('Firebase patient: ' + data.name + ' (ID: ' + doc.id + ')');
+                    });
+                }
+            } catch (error) {
+                addResult('ERROR: ' + error.message);
+            }
+        }
+
+        function checkLocalStoragePatients() {
+            addResult('Checking localStorage patients...');
+            try {
+                const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+                addResult('LocalStorage patients found: ' + patients.length);
+                
+                if (patients.length === 0) {
+                    addResult('No patients in localStorage');
+                } else {
+                    patients.forEach(patient => {
+                        addResult('LocalStorage patient: ' + patient.name + ' (ID: ' + patient.id + ')');
+                    });
+                }
+            } catch (error) {
+                addResult('ERROR: ' + error.message);
+            }
+        }
+
+        function addTestPatient() {
+            addResult('Adding test patient...');
+            try {
+                const testPatient = {
+                    id: 'test-' + Date.now(),
+                    name: 'Test Patient',
+                    age: 30,
+                    phone: '555-0123',
+                    medicalHistory: 'Test medical history',
+                    timestamp: new Date().toISOString()
+                };
+
+                // Add to localStorage
+                const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+                patients.push(testPatient);
+                localStorage.setItem('patients', JSON.stringify(patients));
+                addResult('Test patient added to localStorage');
+
+                // Try to add to Firebase if available
+                if (firebaseInitialized && db) {
+                    db.collection('patients').add({
+                        name: testPatient.name,
+                        age: testPatient.age,
+                        phone: testPatient.phone,
+                        medicalHistory: testPatient.medicalHistory,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    }).then(docRef => {
+                        addResult('Test patient added to Firebase with ID: ' + docRef.id);
+                    }).catch(error => {
+                        addResult('ERROR adding to Firebase: ' + error.message);
+                    });
+                }
+            } catch (error) {
+                addResult('ERROR: ' + error.message);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatus('Initializing...');
+            
+            if (initializeFirebase()) {
+                updateStatus('Firebase ready', 'success');
+            } else {
+                updateStatus('Using localStorage fallback', 'info');
+            }
+            
+            document.getElementById('check-firebase').addEventListener('click', checkFirebasePatients);
+            document.getElementById('check-localstorage').addEventListener('click', checkLocalStoragePatients);
+            document.getElementById('add-test-patient').addEventListener('click', addTestPatient);
+            
+            addResult('System ready - click buttons to test');
+        });
+    </script>
+</body>
+</html>

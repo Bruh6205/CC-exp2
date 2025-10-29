@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Connection Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="./public/config.js"></script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">Firebase Connection Test</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Test Controls -->
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Firebase Tests</h2>
+                
+                <div class="space-y-4">
+                    <button onclick="testFirebaseInit()" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                        1. Test Firebase Initialization
+                    </button>
+                    
+                    <button onclick="testFirebaseWrite()" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                        2. Test Firebase Write
+                    </button>
+                    
+                    <button onclick="testFirebaseRead()" class="w-full bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg">
+                        3. Test Firebase Read
+                    </button>
+                    
+                    <button onclick="testPatientOperations()" class="w-full bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg">
+                        4. Test Patient Operations
+                    </button>
+                    
+                    <button onclick="clearTestData()" class="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
+                        Clear Test Data
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Results -->
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Test Results</h2>
+                <div id="testResults" class="space-y-2 text-sm">
+                    <p class="text-gray-400">No tests run yet</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Console Output -->
+        <div class="mt-8 bg-gray-800 rounded-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">Console Output</h2>
+            <div id="consoleOutput" class="bg-black rounded p-4 font-mono text-sm text-green-400 h-64 overflow-y-auto">
+                <p>Console output will appear here...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let db = null;
+        let firebaseInitialized = false;
+        
+        // Capture console output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addToConsole(message, type = 'log') {
+            const consoleOutput = document.getElementById('consoleOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'text-red-400' : type === 'warn' ? 'text-yellow-400' : 'text-green-400';
+            consoleOutput.innerHTML += `<div class="${color}">[${timestamp}] ${message}</div>`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole('ERROR: ' + args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToConsole('WARN: ' + args.join(' '), 'warn');
+        };
+        
+        // Initialize Firebase
+        function initializeFirebase() {
+            try {
+                console.log('Starting Firebase initialization...');
+                
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase not loaded from CDN');
+                }
+                
+                let firebaseConfig = null;
+                if (typeof window !== 'undefined' && window.FIREBASE_CONFIG) {
+                    firebaseConfig = window.FIREBASE_CONFIG;
+                    console.log('Using config from window.FIREBASE_CONFIG');
+                } else {
+                    throw new Error('No Firebase config found');
+                }
+                
+                console.log('Firebase config:', firebaseConfig);
+                
+                if (!firebase.apps || firebase.apps.length === 0) {
+                    firebase.initializeApp(firebaseConfig);
+                    console.log('Firebase app initialized');
+                } else {
+                    console.log('Firebase app already initialized');
+                }
+                
+                db = firebase.firestore();
+                firebaseInitialized = true;
+                console.log('Firebase Firestore initialized successfully');
+                return true;
+            } catch (error) {
+                console.error('Firebase initialization failed:', error.message);
+                firebaseInitialized = false;
+                db = null;
+                return false;
+            }
+        }
+        
+        // Test functions
+        function testFirebaseInit() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<p class="text-yellow-400">Testing Firebase initialization...</p>';
+            
+            const success = initializeFirebase();
+            
+            if (success) {
+                results.innerHTML = '<p class="text-green-400">✓ Firebase initialization successful</p>';
+            } else {
+                results.innerHTML = '<p class="text-red-400">✗ Firebase initialization failed</p>';
+            }
+        }
+        
+        async function testFirebaseWrite() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<p class="text-yellow-400">Testing Firebase write operation...</p>';
+            
+            if (!firebaseInitialized || !db) {
+                results.innerHTML = '<p class="text-red-400">✗ Firebase not initialized</p>';
+                return;
+            }
+            
+            try {
+                const testData = {
+                    name: 'Test Patient',
+                    age: 30,
+                    phone: '555-1234',
+                    medicalHistory: 'Test data',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                const docRef = await db.collection('test').add(testData);
+                results.innerHTML = '<p class="text-green-400">✓ Firebase write successful - ID: ' + docRef.id + '</p>';
+                console.log('Write test successful, document ID:', docRef.id);
+            } catch (error) {
+                results.innerHTML = '<p class="text-red-400">✗ Firebase write failed: ' + error.message + '</p>';
+                console.error('Write test failed:', error);
+            }
+        }
+        
+        async function testFirebaseRead() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<p class="text-yellow-400">Testing Firebase read operation...</p>';
+            
+            if (!firebaseInitialized || !db) {
+                results.innerHTML = '<p class="text-red-400">✗ Firebase not initialized</p>';
+                return;
+            }
+            
+            try {
+                const snapshot = await db.collection('test').get();
+                results.innerHTML = '<p class="text-green-400">✓ Firebase read successful - Found ' + snapshot.size + ' documents</p>';
+                console.log('Read test successful, found', snapshot.size, 'documents');
+                
+                snapshot.forEach(doc => {
+                    console.log('Document:', doc.id, doc.data());
+                });
+            } catch (error) {
+                results.innerHTML = '<p class="text-red-400">✗ Firebase read failed: ' + error.message + '</p>';
+                console.error('Read test failed:', error);
+            }
+        }
+        
+        async function testPatientOperations() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<p class="text-yellow-400">Testing patient operations...</p>';
+            
+            if (!firebaseInitialized || !db) {
+                results.innerHTML = '<p class="text-red-400">✗ Firebase not initialized</p>';
+                return;
+            }
+            
+            try {
+                // Test adding a patient
+                const patientData = {
+                    name: 'John Doe',
+                    age: 35,
+                    phone: '555-9876',
+                    medicalHistory: 'No known allergies',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                const docRef = await db.collection('patients').add(patientData);
+                console.log('Patient added to Firebase with ID:', docRef.id);
+                
+                // Test reading patients
+                const snapshot = await db.collection('patients').get();
+                console.log('Patients in Firebase:', snapshot.size);
+                
+                results.innerHTML = '<p class="text-green-400">✓ Patient operations successful - Added 1 patient, Total: ' + snapshot.size + '</p>';
+            } catch (error) {
+                results.innerHTML = '<p class="text-red-400">✗ Patient operations failed: ' + error.message + '</p>';
+                console.error('Patient operations failed:', error);
+            }
+        }
+        
+        async function clearTestData() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<p class="text-yellow-400">Clearing test data...</p>';
+            
+            if (!firebaseInitialized || !db) {
+                results.innerHTML = '<p class="text-red-400">✗ Firebase not initialized</p>';
+                return;
+            }
+            
+            try {
+                // Clear test collection
+                const testSnapshot = await db.collection('test').get();
+                const testDeletions = [];
+                testSnapshot.forEach(doc => {
+                    testDeletions.push(db.collection('test').doc(doc.id).delete());
+                });
+                await Promise.all(testDeletions);
+                
+                results.innerHTML = '<p class="text-green-400">✓ Test data cleared successfully</p>';
+                console.log('Test data cleared');
+            } catch (error) {
+                results.innerHTML = '<p class="text-red-400">✗ Failed to clear test data: ' + error.message + '</p>';
+                console.error('Clear test data failed:', error);
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Firebase test page loaded');
+            initializeFirebase();
+        });
+    </script>
+</body>
+</html>

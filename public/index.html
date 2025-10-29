@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hospital Management System</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M3Z26FSYR6"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-M3Z26FSYR6');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="./config.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      body { 
+        font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; 
+        background: #1a2332;
+      }
+      .card-hover { 
+        transition: all 0.3s ease; 
+      }
+      .card-hover:hover { 
+        transform: translateY(-2px); 
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); 
+      }
+    </style>
+  </head>
+  <body class="min-h-screen">
+    <!-- Navigation Bar -->
+    <nav class="bg-white/10 backdrop-blur-sm border-b border-white/20">
+      <div class="container mx-auto px-6 py-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-8">
+            <a href="#" class="text-white font-semibold text-lg">MediCare</a>
+            <div class="flex space-x-6">
+              <a href="#" class="text-white/80 hover:text-white transition-colors cursor-pointer" onclick="showPatientsList()">Patients</a>
+              <a href="#" class="text-white/80 hover:text-white transition-colors cursor-pointer" onclick="showDoctorsList()">Doctors</a>
+              <a href="#" class="text-white/80 hover:text-white transition-colors cursor-pointer" onclick="showAppointmentsList()">Appointments</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-6 py-12">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+        <!-- Left Panel - Main Content -->
+        <div class="space-y-8">
+          <div>
+            <h1 class="text-5xl font-bold text-white mb-6">Hospital Management System</h1>
+            <p class="text-white/90 text-xl leading-relaxed">
+              Streamline healthcare operations with smart management — a centralized hub for patient care, doctor schedules, appointments, and medical records.
+            </p>
+          </div>
+          
+          <div class="flex flex-col sm:flex-row gap-4">
+            <button class="bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors card-hover" id="add-patient-btn">
+              Add New Patient
+            </button>
+            <button class="bg-gray-500 hover:bg-gray-600 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors card-hover" id="book-appointment-btn">
+              Book Appointment
+            </button>
+          </div>
+          
+        </div>
+
+        <!-- Right Panel - Feature Cards -->
+        <div class="space-y-6">
+          <!-- Patients Card -->
+          <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 card-hover">
+            <h3 class="text-white text-xl font-semibold mb-3">Patients</h3>
+            <p class="text-white/80 mb-4">
+              Manage patient records, medical history, and treatment plans.
+            </p>
+            <a href="#" class="text-white font-medium hover:text-green-300 transition-colors">
+              View patients →
+            </a>
+          </div>
+
+          <!-- Doctors Card -->
+          <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 card-hover">
+            <h3 class="text-white text-xl font-semibold mb-3">Doctors</h3>
+            <p class="text-white/80 mb-4">
+              Doctor directory with specializations and availability.
+            </p>
+            <a href="#" class="text-white font-medium hover:text-green-300 transition-colors">
+              Find doctors →
+            </a>
+          </div>
+
+          <!-- Appointments Card -->
+          <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 card-hover">
+            <h3 class="text-white text-xl font-semibold mb-3">Appointments</h3>
+            <p class="text-white/80 mb-4">
+              Schedule and manage patient appointments efficiently.
+            </p>
+            <a href="#" class="text-white font-medium hover:text-green-300 transition-colors">
+              Check schedule →
+            </a>
+          </div>
+
+          <!-- Dashboard Card -->
+          <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 card-hover">
+            <h3 class="text-white text-xl font-semibold mb-3">Dashboard</h3>
+            <p class="text-white/80 mb-4">
+              Overview of hospital operations and analytics.
+            </p>
+            <a href="#" class="text-white font-medium hover:text-green-300 transition-colors">
+              View analytics →
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- App -->
+    <script src="./config.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

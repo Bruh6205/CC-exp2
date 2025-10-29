@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixed Hospital System</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M3Z26FSYR6"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-M3Z26FSYR6');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="./config.js"></script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold mb-8">Fixed Hospital System</h1>
+        
+        <div class="bg-gray-800 p-6 rounded-lg mb-6">
+            <button id="add-patient-btn" class="bg-green-500 hover:bg-green-600 px-6 py-3 rounded font-semibold">
+                Add New Patient
+            </button>
+        </div>
+        
+        <div id="status" class="bg-gray-800 p-6 rounded-lg">
+            <h2 class="text-xl font-semibold mb-4">Status</h2>
+            <div id="status-content">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        let db = null;
+        let firebaseInitialized = false;
+
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status-content');
+            status.innerHTML = message;
+            status.className = type === 'error' ? 'text-red-400' : type === 'success' ? 'text-green-400' : 'text-blue-400';
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white font-medium z-50 ${
+                type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+            }`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 4000);
+        }
+
+        function createModal(title, content) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 border border-white/20">
+                    <h2 class="text-xl font-bold text-white mb-4">${title}</h2>
+                    ${content}
+                </div>
+            `;
+            
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+            
+            document.body.appendChild(modal);
+            return modal;
+        }
+
+        function closeModal() {
+            const modal = document.querySelector('.fixed.inset-0');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        function showAddPatientForm() {
+            const modal = createModal('Add New Patient', `
+                <form id="addPatientForm" class="space-y-4">
+                    <div>
+                        <label class="block text-white text-sm font-medium mb-2">Full Name</label>
+                        <input type="text" id="patientName" placeholder="Enter patient's full name" 
+                               class="w-full px-3 py-2 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-white text-sm font-medium mb-2">Age</label>
+                        <input type="number" id="patientAge" placeholder="Enter age" 
+                               class="w-full px-3 py-2 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-white text-sm font-medium mb-2">Phone Number</label>
+                        <input type="tel" id="patientPhone" placeholder="Enter phone number" 
+                               class="w-full px-3 py-2 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-white text-sm font-medium mb-2">Medical History</label>
+                        <textarea id="medicalHistory" rows="3" placeholder="Any existing medical conditions..." 
+                                  class="w-full px-3 py-2 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+                    </div>
+                    <div class="flex gap-3">
+                        <button type="submit" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                            Add Patient
+                        </button>
+                        <button type="button" onclick="closeModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            `);
+            
+            // Handle form submission
+            document.getElementById('addPatientForm').addEventListener('submit', handleAddPatient);
+        }
+
+        async function handleAddPatient(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('patientName').value.trim();
+            const age = parseInt(document.getElementById('patientAge').value);
+            const phone = document.getElementById('patientPhone').value.trim();
+            const medicalHistory = document.getElementById('medicalHistory').value.trim();
+            
+            if (!name) {
+                showNotification('Please enter patient name', 'error');
+                return;
+            }
+            
+            if (!age || age < 0 || age > 150) {
+                showNotification('Please enter a valid age', 'error');
+                return;
+            }
+            
+            if (!phone) {
+                showNotification('Please enter phone number', 'error');
+                return;
+            }
+            
+            const formData = {
+                name: name,
+                age: age,
+                phone: phone,
+                medicalHistory: medicalHistory,
+                timestamp: new Date().toISOString()
+            };
+            
+            try {
+                if (firebaseInitialized && db) {
+                    console.log('Saving to Firebase...');
+                    const docRef = await db.collection('patients').add({
+                        ...formData,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    showNotification('Patient added successfully to Firebase!', 'success');
+                    console.log('Patient added with ID:', docRef.id);
+                } else {
+                    console.log('Saving to localStorage...');
+                    const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+                    const newPatient = { 
+                        id: Date.now().toString() + Math.random().toString(36).substr(2, 9), 
+                        ...formData 
+                    };
+                    patients.push(newPatient);
+                    localStorage.setItem('patients', JSON.stringify(patients));
+                    showNotification('Patient added successfully to local storage!', 'success');
+                }
+                
+                closeModal();
+                updateStatus('Patient added successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Error adding patient:', error);
+                showNotification('Error adding patient: ' + error.message, 'error');
+            }
+        }
+
+        function initializeFirebase() {
+            try {
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase not loaded');
+                }
+
+                if (!window.FIREBASE_CONFIG) {
+                    throw new Error('Firebase config not found');
+                }
+
+                if (!firebase.apps || firebase.apps.length === 0) {
+                    firebase.initializeApp(window.FIREBASE_CONFIG);
+                }
+                
+                db = firebase.firestore();
+                firebaseInitialized = true;
+                console.log('Firebase initialized successfully');
+                return true;
+            } catch (error) {
+                console.log('Firebase initialization failed:', error.message);
+                firebaseInitialized = false;
+                return false;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded');
+            
+            if (initializeFirebase()) {
+                updateStatus('Firebase connected - ready to add patients', 'success');
+            } else {
+                updateStatus('Using local storage fallback - ready to add patients', 'info');
+            }
+            
+            document.getElementById('add-patient-btn').addEventListener('click', function() {
+                console.log('Add patient button clicked');
+                showAddPatientForm();
+            });
+        });
+    </script>
+</body>
+</html>

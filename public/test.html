@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Test</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M3Z26FSYR6"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-M3Z26FSYR6');
+    </script>
+</head>
+<body>
+    <button id="test-btn">Test Button</button>
+    <div id="result"></div>
+    
+    <script>
+        document.getElementById('test-btn').addEventListener('click', function() {
+            document.getElementById('result').innerHTML = 'Button works!';
+        });
+    </script>
+</body>
+</html>
